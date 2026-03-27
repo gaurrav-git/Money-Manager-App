@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Money Manager</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">₹</span>
+        <span class="logo-text">MoneyMate</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline" id="downloadCsvBtn">⬇ Export CSV</button>
+        <button class="btn btn-primary" id="openModalBtn">+ Add Transaction</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- Summary Cards -->
+    <section class="summary-section">
+      <div class="summary-card income-card">
+        <div class="card-label">Total Income</div>
+        <div class="card-amount" id="totalIncome">₹0.00</div>
+        <div class="card-icon">↑</div>
+      </div>
+      <div class="summary-card expense-card">
+        <div class="card-label">Total Expenses</div>
+        <div class="card-amount" id="totalExpense">₹0.00</div>
+        <div class="card-icon">↓</div>
+      </div>
+      <div class="summary-card balance-card">
+        <div class="card-label">Net Balance</div>
+        <div class="card-amount" id="netBalance">₹0.00</div>
+        <div class="card-icon">◈</div>
+      </div>
+    </section>
+
+    <!-- Filters & Sorting -->
+    <section class="filter-section">
+      <div class="filter-group">
+        <label>Category</label>
+        <select id="filterCategory">
+          <option value="">All</option>
+          <option value="Income">Income</option>
+          <option value="Expense">Expense</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Sub-Category</label>
+        <select id="filterSubCategory">
+          <option value="">All</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>From</label>
+        <input type="date" id="filterFrom"/>
+      </div>
+      <div class="filter-group">
+        <label>To</label>
+        <input type="date" id="filterTo"/>
+      </div>
+      <div class="filter-group">
+        <label>Sort By</label>
+        <select id="sortOption">
+          <option value="date-desc">Date (Newest)</option>
+          <option value="date-asc">Date (Oldest)</option>
+          <option value="amount-desc">Amount (High→Low)</option>
+          <option value="amount-asc">Amount (Low→High)</option>
+        </select>
+      </div>
+      <div class="filter-group filter-btn-group">
+        <button class="btn btn-outline" id="applyFilterBtn">Apply</button>
+        <button class="btn btn-ghost" id="clearFilterBtn">Clear</button>
+      </div>
+    </section>
+
+    <!-- Transaction Table -->
+    <section class="table-section">
+      <div class="section-header">
+        <h2>Transaction History</h2>
+        <span class="tx-count" id="txCount">0 records</span>
+      </div>
+      <div class="table-wrapper">
+        <table class="tx-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Sub-Category</th>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="txTableBody">
+          </tbody>
+        </table>
+        <div class="empty-state" id="emptyState">
+          <span>No transactions yet. Add one to get started!</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts Section -->
+    <section class="charts-section">
+      <div class="chart-box">
+        <h3>Expense Breakdown</h3>
+        <canvas id="expensePieChart"></canvas>
+        <div class="no-chart-msg" id="noPieData">No expense data to display.</div>
+      </div>
+      <div class="chart-box">
+        <h3>Income vs Expense</h3>
+        <canvas id="summaryBarChart"></canvas>
+        <div class="no-chart-msg" id="noBarData">No data to display.</div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal Overlay -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="modalTitle">Add Transaction</h2>
+        <button class="modal-close" id="closeModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editId"/>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Amount <span class="req">*</span></label>
+            <input type="number" id="amount" placeholder="0.00" min="0.01" step="0.01"/>
+            <span class="error-msg" id="amountErr"></span>
+          </div>
+          <div class="form-group">
+            <label>Date <span class="req">*</span></label>
+            <input type="date" id="txDate"/>
+            <span class="error-msg" id="dateErr"></span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Category <span class="req">*</span></label>
+          <div class="radio-group" id="categoryGroup">
+            <label class="radio-label">
+              <input type="radio" name="category" value="Income"/> Income
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="category" value="Expense"/> Expense
+            </label>
+          </div>
+          <span class="error-msg" id="categoryErr"></span>
+        </div>
+
+        <div class="form-group">
+          <label>Sub-Category <span class="req">*</span></label>
+          <select id="subCategory">
+            <option value="">-- Select Category First --</option>
+          </select>
+          <span class="error-msg" id="subCategoryErr"></span>
+        </div>
+
+        <div class="form-group">
+          <label>Description <span class="optional">(optional, max 100 chars)</span></label>
+          <textarea id="description" maxlength="100" rows="2" placeholder="Brief note..."></textarea>
+          <span class="char-count" id="charCount">0/100</span>
+          <span class="error-msg" id="descErr"></span>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+          <button class="btn btn-primary" id="saveBtn">Save Transaction</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div class="modal-overlay" id="confirmOverlay">
+    <div class="modal-box confirm-box">
+      <div class="confirm-icon">🗑</div>
+      <h3>Delete Transaction?</h3>
+      <p>This action cannot be undone. The transaction will be permanently removed.</p>
+      <div class="confirm-actions">
+        <button class="btn btn-ghost" id="cancelDeleteBtn">Cancel</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
